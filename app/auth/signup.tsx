@@ -17,13 +17,11 @@ import ScreenWrapper from "@/components/ScreenWrapper";
 import { theme } from "@/constants/theme";
 import { userSignup } from "./authactions/action";
 import Loading from "@/components/Loading";
+import { useRouter } from "expo-router";
 
 // Signup Screen Component
-const SignupScreen = ({
-  onNavigate,
-}: {
-  onNavigate: (screen: string) => void;
-}) => {
+const SignupScreen = ({}: {}) => {
+  const router = useRouter();
   const [selectedRole, setSelectedRole] = useState<
     "user" | "professional" | null
   >(null);
@@ -53,7 +51,7 @@ const SignupScreen = ({
       setLoading(true);
       const res = await userSignup(
         useremail,
-        password,
+        userpassword,
         username,
         userphone,
         selectedRole
@@ -90,7 +88,7 @@ const SignupScreen = ({
           >
             <TouchableOpacity
               style={styles.backButton}
-              onPress={() => onNavigate("welcome")}
+              onPress={() => router.push("/")}
             >
               <Text style={styles.backButtonText}>← Back</Text>
             </TouchableOpacity>
@@ -287,7 +285,7 @@ const SignupScreen = ({
                 <Text style={styles.loginPromptText}>
                   Already have an account?{" "}
                 </Text>
-                <TouchableOpacity onPress={() => onNavigate("login")}>
+                <TouchableOpacity onPress={() => router.push("/auth/signin")}>
                   <Text style={styles.loginPromptLink}>Login</Text>
                 </TouchableOpacity>
               </View>

@@ -1,14 +1,14 @@
 import { StyleSheet, Text, View } from "react-native";
 import React from "react";
 
-const videocall = () => {
+const Profile = () => {
   return (
     <View>
-      <Text>videocall</Text>
+      <Text>Profile</Text>
     </View>
   );
 };
 
-export default videocall;
+export default Profile;
 
 const styles = StyleSheet.create({});

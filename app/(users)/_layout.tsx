@@ -19,18 +19,9 @@ const TabsLayout = () => {
       }}
     >
       <Tabs.Screen
-        name="videocall"
+        name="UserDashboard"
         options={{
-          title: "Video call",
-          tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="video" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="Home"
-        options={{
-          title: "Home",
+          title: "Dashboard",
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="home" size={size} color={color} />
           ),
@@ -38,9 +29,23 @@ const TabsLayout = () => {
       />
 
       <Tabs.Screen
-        name="ProfileView"
+        name="Bookings"
         options={{
-          title: "Profile",
+          title: "Bookings",
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons
+              name="calendar-alert-outline"
+              size={size}
+              color={color}
+            />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="Profile"
+        options={{
+          title: "Profilw",
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons
               name="account-circle"

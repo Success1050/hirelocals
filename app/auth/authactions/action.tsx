@@ -18,3 +18,12 @@ export const userSignup = async (
   }
   return { success: true };
 };
+
+export const userLogin = async (email: string, password: string) => {
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+  return { success: true };
+};

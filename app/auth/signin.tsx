@@ -9,20 +9,42 @@ import {
   StatusBar,
   KeyboardAvoidingView,
   Platform,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import ScreenWrapper from "@/components/ScreenWrapper";
 import { theme } from "@/constants/theme";
+import { userLogin } from "./authactions/action";
+import { useRouter } from "expo-router";
 
-const LoginScreen = ({
-  onNavigate,
-}: {
-  onNavigate: (screen: string) => void;
-}) => {
+const LoginScreen = ({}: {}) => {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState<boolean>(false);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
+    const useremail = email.trim();
+    const userpassword = password.trim();
+
+    try {
+      setLoading(true);
+      const res = await userLogin(useremail, userpassword);
+      if (res.error) {
+        return Alert.alert("Error", "Invalid login credentials");
+      }
+      if (res && res.success) {
+        Alert.alert("successfull", "logged in successfully");
+      }
+
+      console.log(res.error);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+
     console.log("Login with:", email, password);
     // Add your login logic here
   };
@@ -45,7 +67,7 @@ const LoginScreen = ({
           >
             <TouchableOpacity
               style={styles.backButton}
-              onPress={() => onNavigate("welcome")}
+              onPress={() => router.push("/")}
             >
               <Text style={styles.backButtonText}>← Back</Text>
             </TouchableOpacity>
@@ -105,7 +127,9 @@ const LoginScreen = ({
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                 >
-                  <Text style={styles.primaryButtonText}>Login</Text>
+                  <Text style={styles.primaryButtonText}>
+                    {loading ? <ActivityIndicator /> : "Login"}
+                  </Text>
                 </LinearGradient>
               </TouchableOpacity>
 
@@ -117,7 +141,7 @@ const LoginScreen = ({
 
               <TouchableOpacity
                 style={styles.secondaryButton}
-                onPress={() => onNavigate("signup")}
+                onPress={() => router.push("/auth/signup")}
               >
                 <Text style={styles.secondaryButtonText}>
                   Create New Account
