@@ -10,7 +10,6 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { Booking, Professional, Service } from "@/types";
 import { featuredPros, recentBookings, services } from "@/mockData";
 import { styles } from "@/styles/userStyles/style";
 
