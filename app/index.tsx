@@ -21,7 +21,7 @@ export default function Index() {
 
   const handleSignup = () => {
     console.log("Navigate to Signup");
-    router.push("/UserDashboard");
+    router.push("/auth/signup");
     // Navigation logic here
   };
 
