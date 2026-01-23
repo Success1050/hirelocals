@@ -15,7 +15,7 @@ export default function Index() {
   const router = useRouter();
   const handleLogin = () => {
     console.log("Navigate to Login");
-    router.push("/auth/signin");
+    router.push("/UserDashboard");
     // Navigation logic here
   };
 
