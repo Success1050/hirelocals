@@ -11,7 +11,7 @@ import {
   Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { Link, useRouter } from "expo-router";
 
 interface Professional {
   id: number;
@@ -138,6 +138,8 @@ export default function HireScreen() {
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Hire Professional</Text>
+        <Link href="/(professionals)/ProfessionalDashboard">  <Text style={styles.headerTitle}>click me</Text></Link>
+
         <TouchableOpacity style={styles.shareButton}>
           <Ionicons name="share-social-outline" size={24} color="#fff" />
         </TouchableOpacity>
@@ -265,7 +267,7 @@ export default function HireScreen() {
                 style={[
                   styles.dateCard,
                   selectedDate === `${date.day}-${date.date}` &&
-                    styles.dateCardSelected,
+                  styles.dateCardSelected,
                 ]}
                 onPress={() => setSelectedDate(`${date.day}-${date.date}`)}
               >
@@ -273,7 +275,7 @@ export default function HireScreen() {
                   style={[
                     styles.dateDay,
                     selectedDate === `${date.day}-${date.date}` &&
-                      styles.dateTextSelected,
+                    styles.dateTextSelected,
                   ]}
                 >
                   {date.day}
@@ -282,7 +284,7 @@ export default function HireScreen() {
                   style={[
                     styles.dateNumber,
                     selectedDate === `${date.day}-${date.date}` &&
-                      styles.dateTextSelected,
+                    styles.dateTextSelected,
                   ]}
                 >
                   {date.date}
@@ -291,7 +293,7 @@ export default function HireScreen() {
                   style={[
                     styles.dateMonth,
                     selectedDate === `${date.day}-${date.date}` &&
-                      styles.dateTextSelected,
+                    styles.dateTextSelected,
                   ]}
                 >
                   {date.month}
@@ -393,7 +395,7 @@ export default function HireScreen() {
           style={[
             styles.bookButton,
             (!selectedDate || !selectedTime || !jobDescription) &&
-              styles.bookButtonDisabled,
+            styles.bookButtonDisabled,
           ]}
           onPress={handleBookNow}
           disabled={!selectedDate || !selectedTime || !jobDescription}
