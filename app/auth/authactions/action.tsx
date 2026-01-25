@@ -1,5 +1,4 @@
-import { supabase } from "@/lib/supabase";
-
+// Mock auth actions for now
 export const userSignup = async (
   email: string,
   password: string,
@@ -7,23 +6,17 @@ export const userSignup = async (
   phone: string,
   role: string
 ) => {
-  const { error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: { data: { fullName, phone, role } },
-  });
+  // Simulate network delay
+  await new Promise((resolve) => setTimeout(resolve, 1000));
 
-  if (error) {
-    return { success: false, error: error.message };
-  }
+  console.log("Mock Signup:", { email, password, fullName, phone, role });
   return { success: true };
 };
 
 export const userLogin = async (email: string, password: string) => {
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  // Simulate network delay
+  await new Promise((resolve) => setTimeout(resolve, 1000));
 
-  if (error) {
-    return { success: false, error: error.message };
-  }
+  console.log("Mock Login:", { email, password });
   return { success: true };
 };

@@ -20,7 +20,7 @@ import Loading from "@/components/Loading";
 import { useRouter } from "expo-router";
 
 // Signup Screen Component
-const SignupScreen = ({}: {}) => {
+const SignupScreen = ({ }: {}) => {
   const router = useRouter();
   const [selectedRole, setSelectedRole] = useState<
     "user" | "professional" | null
@@ -57,9 +57,12 @@ const SignupScreen = ({}: {}) => {
         selectedRole
       );
       if (res && res.success) {
-        Alert.alert("successfull", "logged in successfully");
+        Alert.alert("Success", "Account created successfully");
+        // For testing/mocking, route to professional dashboard or user home
+        router.replace("/(professionals)/ProfessionalDashboard");
+      } else {
+        Alert.alert("Error", "Signup failed");
       }
-      console.log(res.error);
     } catch (error) {
       console.log(error);
     } finally {
@@ -119,7 +122,7 @@ const SignupScreen = ({}: {}) => {
                       style={[
                         styles.roleIconContainer,
                         selectedRole === "user" &&
-                          styles.roleIconContainerSelected,
+                        styles.roleIconContainerSelected,
                       ]}
                     >
                       <Text style={styles.roleCardIcon}>🔍</Text>
@@ -146,7 +149,7 @@ const SignupScreen = ({}: {}) => {
                     style={[
                       styles.roleCard,
                       selectedRole === "professional" &&
-                        styles.roleCardSelected,
+                      styles.roleCardSelected,
                     ]}
                     onPress={() => setSelectedRole("professional")}
                     activeOpacity={0.7}
@@ -155,7 +158,7 @@ const SignupScreen = ({}: {}) => {
                       style={[
                         styles.roleIconContainer,
                         selectedRole === "professional" &&
-                          styles.roleIconContainerSelected,
+                        styles.roleIconContainerSelected,
                       ]}
                     >
                       <Text style={styles.roleCardIcon}>💼</Text>
@@ -164,7 +167,7 @@ const SignupScreen = ({}: {}) => {
                       style={[
                         styles.roleCardTitle,
                         selectedRole === "professional" &&
-                          styles.roleCardTitleSelected,
+                        styles.roleCardTitleSelected,
                       ]}
                     >
                       Offer My Services

@@ -18,7 +18,7 @@ import { theme } from "@/constants/theme";
 import { userLogin } from "./authactions/action";
 import { useRouter } from "expo-router";
 
-const LoginScreen = ({}: {}) => {
+const LoginScreen = ({ }: {}) => {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -31,14 +31,14 @@ const LoginScreen = ({}: {}) => {
     try {
       setLoading(true);
       const res = await userLogin(useremail, userpassword);
-      if (res.error) {
-        return Alert.alert("Error", "Invalid login credentials");
-      }
       if (res && res.success) {
-        Alert.alert("successfull", "logged in successfully");
+        Alert.alert("Success", "Logged in successfully");
+        // For testing/mocking, routing to professional dashboard or user home
+        // You can change this based on what you want to test
+        router.replace("/(professionals)/ProfessionalDashboard");
+      } else {
+        Alert.alert("Error", "Login failed");
       }
-
-      console.log(res.error);
     } catch (error) {
       console.log(error);
     } finally {
