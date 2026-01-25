@@ -7,46 +7,17 @@ import {
   Switch,
   StatusBar,
 } from "react-native";
-import React, { useState, useCallback } from "react";
+import React, { useState } from "react";
 import ScreenWrapper from "@/components/ScreenWrapper";
-import { useRouter, useFocusEffect } from "expo-router";
-import { supabase } from "@/lib/supabase";
+import { useRouter } from "expo-router";
 import { theme } from "@/constants/theme";
 import { MaterialCommunityIcons, Ionicons } from "@expo/vector-icons";
 
 const ProfessionalDashboard = () => {
   const router = useRouter();
   const [isOnline, setIsOnline] = useState(true);
-  const [userName, setUserName] = useState("Professional");
+  const [userName, setUserName] = useState("Emeka Okafor");
   const [loading, setLoading] = useState(false);
-
-  useFocusEffect(
-    useCallback(() => {
-      fetchProfile();
-    }, [])
-  );
-
-  const fetchProfile = async () => {
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (user) {
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("full_name")
-          .eq("id", user.id)
-          .single();
-
-        if (data && data.full_name) {
-          setUserName(data.full_name);
-        }
-      }
-    } catch (error) {
-      console.log("Error loading profile:", error);
-    }
-  };
 
   // Mock Data
   const stats = [
@@ -111,11 +82,7 @@ const ProfessionalDashboard = () => {
   ];
 
   const logout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      console.log(error);
-      return;
-    }
+    // Mock logout
     router.replace("/auth/signin");
   };
 

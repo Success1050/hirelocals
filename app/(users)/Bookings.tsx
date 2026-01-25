@@ -138,7 +138,7 @@ export default function HireScreen() {
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Hire Professional</Text>
-        <Link href="/(professionals)/ProfessionalDashboard">  <Text style={styles.headerTitle}>click me</Text></Link>
+        <Link href="/(professionals)/Profile">  <Text style={styles.headerTitle}>click me</Text></Link>
 
         <TouchableOpacity style={styles.shareButton}>
           <Ionicons name="share-social-outline" size={24} color="#fff" />

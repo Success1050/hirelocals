@@ -13,105 +13,33 @@ import React, { useEffect, useState } from "react";
 import ScreenWrapper from "@/components/ScreenWrapper";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { supabase } from "@/lib/supabase";
 import { theme } from "@/constants/theme";
 
 const Profile = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
 
-  // Form State
-  const [fullName, setFullName] = useState("");
-  const [service, setService] = useState("");
-  const [hourlyRate, setHourlyRate] = useState("");
-  const [location, setLocation] = useState("");
-  const [bio, setBio] = useState("");
-  const [phone, setPhone] = useState("");
-  const [skills, setSkills] = useState(""); // Comma separated
+  // Mock Data
+  const [fullName, setFullName] = useState("Emeka Okafor");
+  const [service, setService] = useState("Expert Plumber");
+  const [hourlyRate, setHourlyRate] = useState("5000");
+  const [location, setLocation] = useState("Lekki, Lagos");
+  const [bio, setBio] = useState(
+    "Professional plumber with 8+ years experience. Specialized in residential and commercial plumbing. Quick response and quality work guaranteed."
+  );
+  const [phone, setPhone] = useState("08012345678");
+  const [skills, setSkills] = useState(
+    "Pipe Installation, Leak Repairs, Drain Cleaning, Water Heater"
+  );
   const [avatarUrl, setAvatarUrl] = useState("");
 
-  useEffect(() => {
-    fetchProfile();
-  }, []);
-
-  const fetchProfile = async () => {
-    try {
-      setLoading(true);
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        Alert.alert("Error", "No user found");
-        router.replace("/auth/signin");
-        return;
-      }
-
-      setUserId(user.id);
-
-      // Fetch profile data
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-
-      if (error && error.code !== "PGRST116") {
-        console.error("Error fetching profile:", error);
-      }
-
-      if (data) {
-        setFullName(data.full_name || "");
-        setService(data.service || "");
-        setHourlyRate(data.hourly_rate ? data.hourly_rate.toString() : "");
-        setLocation(data.location || "");
-        setBio(data.bio || "");
-        setPhone(data.phone || "");
-        setSkills(data.skills ? data.skills.join(", ") : "");
-        setAvatarUrl(data.avatar_url || "");
-      } else {
-        // If no profile exists, maybe use auth metadata
-        setFullName(user.user_metadata?.fullName || "");
-        setPhone(user.user_metadata?.phone || "");
-      }
-    } catch (error) {
-      console.error("Error in fetchProfile:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleSave = async () => {
-    if (!userId) return;
-
-    try {
-      setLoading(true);
-
-      const updates = {
-        id: userId,
-        full_name: fullName,
-        service,
-        hourly_rate: hourlyRate ? parseFloat(hourlyRate) : null,
-        location,
-        bio,
-        phone,
-        skills: skills.split(",").map((s) => s.trim()).filter((s) => s),
-        updated_at: new Date(),
-      };
-
-      const { error } = await supabase.from("profiles").upsert(updates);
-
-      if (error) {
-        throw error;
-      }
-
-      Alert.alert("Success", "Profile updated successfully!");
-    } catch (error: any) {
-      Alert.alert("Error", error.message);
-    } finally {
+    setLoading(true);
+    // Simulate API call
+    setTimeout(() => {
       setLoading(false);
-    }
+      Alert.alert("Success", "Profile updated successfully!");
+    }, 1000);
   };
 
   return (
