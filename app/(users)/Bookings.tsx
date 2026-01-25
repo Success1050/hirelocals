@@ -6,12 +6,12 @@ import {
   TouchableOpacity,
   TextInput,
   StyleSheet,
-  SafeAreaView,
   StatusBar,
   Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Link, useRouter } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 interface Professional {
   id: number;
