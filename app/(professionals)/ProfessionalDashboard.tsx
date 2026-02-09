@@ -12,11 +12,12 @@ import ScreenWrapper from "@/components/ScreenWrapper";
 import { useRouter } from "expo-router";
 import { theme } from "@/constants/theme";
 import { MaterialCommunityIcons, Ionicons } from "@expo/vector-icons";
+import { useAuth } from "@/contexts/AuthContext";
 
 const ProfessionalDashboard = () => {
   const router = useRouter();
+  const { user, logout: authLogout } = useAuth();
   const [isOnline, setIsOnline] = useState(true);
-  const [userName, setUserName] = useState("Emeka Okafor");
   const [loading, setLoading] = useState(false);
 
   // Mock Data
@@ -82,8 +83,12 @@ const ProfessionalDashboard = () => {
   ];
 
   const logout = async () => {
-    // Mock logout
-    router.replace("/auth/signin");
+    try {
+      await authLogout();
+      router.replace("/auth/signin");
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
   };
 
   const toggleSwitch = () => setIsOnline((previousState) => !previousState);
@@ -99,7 +104,9 @@ const ProfessionalDashboard = () => {
         <View style={styles.header}>
           <View>
             <Text style={styles.greeting}>Welcome back,</Text>
-            <Text style={styles.name}>{userName}</Text>
+            <Text style={styles.name}>
+              {user ? `${user.firstName} ${user.lastName}` : "Professional"}
+            </Text>
           </View>
           <TouchableOpacity style={styles.notificationBtn}>
             <Ionicons name="notifications-outline" size={24} color="#fff" />

@@ -18,10 +18,13 @@ import { theme } from "@/constants/theme";
 import { userSignup } from "./authactions/action";
 import Loading from "@/components/Loading";
 import { useRouter } from "expo-router";
+import { useAuth } from "@/contexts/AuthContext";
+import { getToken } from "@/lib/tokenStorage";
 
 // Signup Screen Component
 const SignupScreen = ({ }: {}) => {
   const router = useRouter();
+  const { login } = useAuth();
   const [selectedRole, setSelectedRole] = useState<
     "user" | "professional" | null
   >(null);
@@ -33,44 +36,63 @@ const SignupScreen = ({ }: {}) => {
   const [confirmPassword, setConfirmPassword] = useState("");
 
   const handleSignup = async () => {
+    // Validate role selection
     if (!selectedRole) {
-      alert("Please select your account type");
+      Alert.alert("Validation Error", "Please select your account type");
       return;
     }
+
     const useremail = email.trim();
     const username = fullName.trim();
     const userphone = phone.trim();
     const userpassword = password.trim();
     const confirmpassword = confirmPassword.trim();
 
-    if (password != confirmPassword) {
-      return Alert.alert("error", "password is not same");
+    // Validate inputs
+    if (!useremail || !username || !userpassword || !confirmpassword) {
+      Alert.alert("Validation Error", "Please fill in all required fields");
+      return;
     }
+
+    // Validate password match
+    if (userpassword !== confirmpassword) {
+      Alert.alert("Validation Error", "Passwords do not match");
+      return;
+    }
+
+    // Split full name into first and last name
+    const nameParts = username.split(' ');
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || nameParts[0];
+
+    // Map frontend role to backend role
+    const backendRole = selectedRole === 'professional' ? 'PROVIDER' : 'CUSTOMER';
 
     try {
       setLoading(true);
       const res = await userSignup(
         useremail,
         userpassword,
-        username,
+        firstName,
+        lastName,
         userphone,
-        selectedRole
+        backendRole
       );
+
       if (res && res.success) {
-        Alert.alert("Success", "Account created successfully");
-        // For testing/mocking, route to professional dashboard or user home
-        router.replace("/(professionals)/ProfessionalDashboard");
+        // Get the token and update auth context
+        const token = await getToken();
+        if (token && res.user) {
+          login(res.user, token);
+        }
       } else {
-        Alert.alert("Error", "Signup failed");
+        Alert.alert("Signup Failed", res.message || "Registration failed");
       }
-    } catch (error) {
-      console.log(error);
+    } catch (error: any) {
+      Alert.alert("Error", "An unexpected error occurred. Please try again.");
     } finally {
       setLoading(false);
     }
-
-    console.log("Signup:", { selectedRole, fullName, email, phone, password });
-    // Add your signup logic here
   };
 
   return (

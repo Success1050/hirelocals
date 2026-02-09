@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   View,
   Text,
@@ -6,23 +6,22 @@ import {
   TouchableOpacity,
   ImageBackground,
   StatusBar,
+  ActivityIndicator,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import ScreenWrapper from "@/components/ScreenWrapper";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Index() {
   const router = useRouter();
+
   const handleLogin = () => {
-    console.log("Navigate to Login");
-    router.push("/UserDashboard");
-    // Navigation logic here
+    router.push("/auth/signin");
   };
 
   const handleSignup = () => {
-    console.log("Navigate to Signup");
     router.push("/auth/signup");
-    // Navigation logic here
   };
 
   return (
@@ -240,5 +239,15 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(233, 69, 96, 0.08)",
     bottom: 100,
     left: -30,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    color: "#ffffff",
+    marginTop: 10,
+    fontSize: 16,
   },
 });

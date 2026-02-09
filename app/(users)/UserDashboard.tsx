@@ -12,8 +12,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { featuredPros, recentBookings, services } from "@/mockData";
 import { styles } from "@/styles/userStyles/style";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function UserDashboard() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("home");
 
   const getStatusColor = (status: string) => {
@@ -79,7 +81,9 @@ export default function UserDashboard() {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Welcome Section */}
         <View style={styles.welcomeSection}>
-          <Text style={styles.welcomeTitle}>Welcome back! 👋</Text>
+          <Text style={styles.welcomeTitle}>
+            Welcome back, {user?.firstName || "User"}! 👋
+          </Text>
           <Text style={styles.welcomeSubtitle}>
             Find the perfect professional for your needs
           </Text>

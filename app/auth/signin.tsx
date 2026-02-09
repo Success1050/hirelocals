@@ -17,9 +17,12 @@ import ScreenWrapper from "@/components/ScreenWrapper";
 import { theme } from "@/constants/theme";
 import { userLogin } from "./authactions/action";
 import { useRouter } from "expo-router";
+import { useAuth } from "@/contexts/AuthContext";
+import { getToken } from "@/lib/tokenStorage";
 
 const LoginScreen = ({ }: {}) => {
   const router = useRouter();
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState<boolean>(false);
@@ -28,25 +31,30 @@ const LoginScreen = ({ }: {}) => {
     const useremail = email.trim();
     const userpassword = password.trim();
 
+    // Validate inputs
+    if (!useremail || !userpassword) {
+      Alert.alert("Validation Error", "Please enter both email and password");
+      return;
+    }
+
     try {
       setLoading(true);
       const res = await userLogin(useremail, userpassword);
+
       if (res && res.success) {
-        Alert.alert("Success", "Logged in successfully");
-        // For testing/mocking, routing to professional dashboard or user home
-        // You can change this based on what you want to test
-        router.replace("/(professionals)/ProfessionalDashboard");
+        // Get the token and update auth context
+        const token = await getToken();
+        if (token && res.user) {
+          login(res.user, token);
+        }
       } else {
-        Alert.alert("Error", "Login failed");
+        Alert.alert("Login Failed", res.message || "Invalid credentials");
       }
-    } catch (error) {
-      console.log(error);
+    } catch (error: any) {
+      Alert.alert("Error", "An unexpected error occurred. Please try again.");
     } finally {
       setLoading(false);
     }
-
-    console.log("Login with:", email, password);
-    // Add your login logic here
   };
 
   return (
