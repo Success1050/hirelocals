@@ -22,10 +22,12 @@ interface AuthContextType {
     token: string | null;
     isAuthenticated: boolean;
     isLoading: boolean;
+    isProviderProfileComplete: boolean;
     login: (userData: User, authToken: string) => void;
     logout: () => Promise<void>;
     updateUser: (userData: User) => void;
     refreshUser: () => Promise<void>;
+    checkProviderStatus: () => Promise<void>;
 }
 
 // Create the context
@@ -36,6 +38,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [user, setUser] = useState<User | null>(null);
     const [token, setToken] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [isProviderProfileComplete, setIsProviderProfileComplete] = useState(false);
 
     // Check for existing auth on mount
     useEffect(() => {
@@ -51,6 +54,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (storedToken && storedUser) {
                 setToken(storedToken);
                 setUser(storedUser);
+
+                // Check provider profile if applicable
+                if (storedUser.role === 'PROVIDER' || storedUser.role === 'BOTH') {
+                    await checkProviderStatus();
+                }
             }
         } catch (error) {
             console.error('Error checking auth:', error);
@@ -59,9 +67,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
-    const login = (userData: User, authToken: string) => {
+    const checkProviderStatus = async () => {
+        try {
+            // Import dynamically to avoid circular dependency if any, or just use imported providerAPI
+            // Since providerAPI is in lib/api, it's fine.
+            // We need to import providerAPI at the top of the file
+            const { providerAPI } = require('@/lib/api');
+            const response = await providerAPI.getProfile();
+            if (response && response.success && response.profile) {
+                setIsProviderProfileComplete(true);
+            } else {
+                setIsProviderProfileComplete(false);
+            }
+        } catch (error) {
+            // If 404, it means no profile
+            console.log('Provider profile not found');
+            setIsProviderProfileComplete(false);
+        }
+    };
+
+    const login = async (userData: User, authToken: string) => {
         setUser(userData);
         setToken(authToken);
+        if (userData.role === 'PROVIDER' || userData.role === 'BOTH') {
+            await checkProviderStatus();
+        }
     };
 
     const logout = async () => {
@@ -69,11 +99,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             await userLogout();
             setUser(null);
             setToken(null);
+            setIsProviderProfileComplete(false);
         } catch (error) {
             console.error('Error during logout:', error);
             // Clear local state even if API call fails
             setUser(null);
             setToken(null);
+            setIsProviderProfileComplete(false);
         }
     };
 
@@ -86,6 +118,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const response = await getCurrentUser();
             if (response.success && response.user) {
                 setUser(response.user);
+                if (response.user.role === 'PROVIDER' || response.user.role === 'BOTH') {
+                    await checkProviderStatus();
+                }
             }
         } catch (error) {
             console.error('Error refreshing user:', error);
@@ -97,10 +132,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         token,
         isAuthenticated: !!token && !!user,
         isLoading,
+        isProviderProfileComplete,
         login,
         logout,
         updateUser,
         refreshUser,
+        checkProviderStatus,
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

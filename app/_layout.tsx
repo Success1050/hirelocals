@@ -5,7 +5,7 @@ import "react-native-url-polyfill/auto";
 import { View, ActivityIndicator } from "react-native";
 
 function RootLayoutNav() {
-  const { isAuthenticated, isLoading, user } = useAuth();
+  const { isAuthenticated, isLoading, user, isProviderProfileComplete } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
 
@@ -15,20 +15,33 @@ function RootLayoutNav() {
     const inAuthGroup = pathname.startsWith("/auth");
     const inProfessionalsGroup = pathname.startsWith("/(professionals)");
     const inUsersGroup = pathname.startsWith("/(users)");
+    const inOnboardingGroup = pathname.startsWith("/onboarding");
     const isRoot = pathname === "/";
 
-    if (!isAuthenticated && (inProfessionalsGroup || inUsersGroup)) {
+    if (!isAuthenticated && (inProfessionalsGroup || inUsersGroup || inOnboardingGroup)) {
       // Redirect to landing if trying to access protected route without auth
       router.replace("/");
-    } else if (isAuthenticated && (inAuthGroup || isRoot)) {
-      // Redirect to appropriate dashboard if already authenticated and trying to access login/signup or landing
+    } else if (isAuthenticated) {
       if (user?.role === "PROVIDER" || user?.role === "BOTH") {
-        router.replace("/(professionals)/ProfessionalDashboard");
+        if (!isProviderProfileComplete) {
+          // Redirect to onboarding if profile is not complete
+          if (pathname !== "/onboarding/ProviderOnboarding") {
+            router.replace("/onboarding/ProviderOnboarding");
+          }
+        } else {
+          // Profile is complete, redirect to dashboard if in auth/root/onboarding
+          if (inAuthGroup || isRoot || inOnboardingGroup) {
+            router.replace("/(professionals)/ProfessionalDashboard");
+          }
+        }
       } else {
-        router.replace("/(users)/UserDashboard");
+        // Customer
+        if (inAuthGroup || isRoot || inOnboardingGroup) {
+          router.replace("/(users)/UserDashboard");
+        }
       }
     }
-  }, [isAuthenticated, isLoading, pathname, user]);
+  }, [isAuthenticated, isLoading, pathname, user, isProviderProfileComplete]);
 
   if (isLoading) {
     return (

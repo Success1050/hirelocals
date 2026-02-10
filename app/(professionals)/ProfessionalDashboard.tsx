@@ -75,9 +75,9 @@ const ProfessionalDashboard = () => {
       color: "#FBBF24",
     },
     {
-      title: "Support",
-      icon: "headset",
-      route: "/(professionals)/Profile", // Redirect to Profile for now or a support page if created
+      title: "Portfolio",
+      icon: "camera-burst",
+      route: "/(professionals)/Portfolio",
       color: "#EC4899",
     },
   ];

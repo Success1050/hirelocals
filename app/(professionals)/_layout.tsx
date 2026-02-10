@@ -65,6 +65,13 @@ const TabsLayout = () => {
           ),
         }}
       />
+
+      <Tabs.Screen
+        name="Portfolio"
+        options={{
+          href: null,
+        }}
+      />
     </Tabs>
   );
 };

@@ -12,35 +12,157 @@ import {
 import React, { useEffect, useState } from "react";
 import ScreenWrapper from "@/components/ScreenWrapper";
 import { useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { theme } from "@/constants/theme";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Profile = () => {
   const router = useRouter();
+  const { logout, user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(true);
 
-  // Mock Data
-  const [fullName, setFullName] = useState("Emeka Okafor");
-  const [service, setService] = useState("Expert Plumber");
-  const [hourlyRate, setHourlyRate] = useState("5000");
-  const [location, setLocation] = useState("Lekki, Lagos");
-  const [bio, setBio] = useState(
-    "Professional plumber with 8+ years experience. Specialized in residential and commercial plumbing. Quick response and quality work guaranteed."
-  );
-  const [phone, setPhone] = useState("08012345678");
-  const [skills, setSkills] = useState(
-    "Pipe Installation, Leak Repairs, Drain Cleaning, Water Heater"
-  );
-  const [avatarUrl, setAvatarUrl] = useState("");
+  // Profile State
+  const [businessName, setBusinessName] = useState("");
+  const [tagline, setTagline] = useState("");
+  const [bio, setBio] = useState("");
+  const [hourlyRate, setHourlyRate] = useState("");
+  const [yearsOfExperience, setYearsOfExperience] = useState("");
+  const [travelRadius, setTravelRadius] = useState("");
+  const [address, setAddress] = useState("");
+
+  // Categories/Skills
+  const [categories, setCategories] = useState<any[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [availableCategories, setAvailableCategories] = useState<any[]>([]);
+
+  useEffect(() => {
+    loadProfile();
+    loadCategories();
+  }, []);
+
+  const loadCategories = async () => {
+    try {
+      const { providerAPI } = require('@/lib/api');
+      const res = await providerAPI.getCategories();
+      if (res.success) {
+        setAvailableCategories(res.categories);
+      }
+    } catch (error) {
+      console.error("Error loading categories:", error);
+    }
+  };
+
+  const loadProfile = async () => {
+    try {
+      setFetching(true);
+      const { providerAPI } = require('@/lib/api');
+      const res = await providerAPI.getProfile();
+
+      if (res.success && res.profile) {
+        const p = res.profile;
+        setBusinessName(p.businessName || "");
+        setTagline(p.tagline || "");
+        setBio(p.bio || "");
+        setHourlyRate(p.hourlyRate ? p.hourlyRate.toString() : "");
+        setYearsOfExperience(p.yearsOfExperience ? p.yearsOfExperience.toString() : "");
+        setTravelRadius(p.travelRadius ? p.travelRadius.toString() : "");
+
+        // Categories
+        if (p.categories && Array.isArray(p.categories)) {
+          setCategories(p.categories);
+          setSelectedCategories(p.categories.map((c: any) => c.id));
+        }
+
+        // Address (from user object nested in profile or direct user context)
+        if (p.user) {
+          setAddress(p.user.address || "");
+        }
+      }
+    } catch (error) {
+      console.error("Error loading profile:", error);
+      Alert.alert("Error", "Failed to load profile data");
+    } finally {
+      setFetching(false);
+    }
+  };
 
   const handleSave = async () => {
+    if (!businessName || !hourlyRate) {
+      Alert.alert("Validation", "Business Name and Hourly Rate are required.");
+      return;
+    }
+
     setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      const { providerAPI } = require('@/lib/api');
+
+      const updateData = {
+        businessName,
+        tagline,
+        bio,
+        hourlyRate: parseFloat(hourlyRate),
+        yearsOfExperience: parseInt(yearsOfExperience) || 0,
+        travelRadius: parseFloat(travelRadius) || 0,
+        categories: selectedCategories // Send array of IDs
+      };
+
+      const res = await providerAPI.updateProfile(updateData);
+
+      if (res.success) {
+        Alert.alert("Success", "Profile updated successfully!");
+        // Reload to reflect any server-side processing
+        loadProfile();
+      } else {
+        Alert.alert("Error", res.message || "Failed to update profile");
+      }
+
+    } catch (error: any) {
+      console.error("Update Error:", error);
+      Alert.alert("Error", "An error occurred while updating profile");
+    } finally {
       setLoading(false);
-      Alert.alert("Success", "Profile updated successfully!");
-    }, 1000);
+    }
   };
+
+  const toggleCategory = (id: string) => {
+    if (selectedCategories.includes(id)) {
+      setSelectedCategories(prev => prev.filter(c => c !== id));
+    } else {
+      setSelectedCategories(prev => [...prev, id]);
+    }
+  };
+
+  const handleLogout = async () => {
+    Alert.alert(
+      "Log Out",
+      "Are you sure you want to log out?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Log Out",
+          style: "destructive",
+          onPress: async () => {
+            await logout();
+            router.replace("/auth/signin");
+          },
+        },
+      ]
+    );
+  };
+
+  if (fetching) {
+    return (
+      <ScreenWrapper bg={"#030712"}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color="#3B82F6" />
+        </View>
+      </ScreenWrapper>
+    );
+  }
 
   return (
     <ScreenWrapper bg={"#030712"}>
@@ -63,32 +185,32 @@ const Profile = () => {
         {/* Avatar Placeholder */}
         <View style={styles.avatarSection}>
           <View style={styles.avatarContainer}>
-            {avatarUrl ? (
-              <Image source={{ uri: avatarUrl }} style={styles.avatar} />
+            {user?.profileImage ? (
+              <Image source={{ uri: user.profileImage }} style={styles.avatar} />
             ) : (
-              <Text style={styles.avatarPlaceholder}>{fullName.charAt(0) || "U"}</Text>
+              <Text style={styles.avatarPlaceholder}>{user?.firstName?.charAt(0) || "U"}</Text>
             )}
           </View>
-          <Text style={styles.avatarHint}>Profile pictures can be managed in settings (Coming Soon)</Text>
+          <Text style={styles.avatarHint}>Profile pictures can be managed in settings</Text>
         </View>
 
         <View style={styles.formGroup}>
-          <Text style={styles.label}>Full Name</Text>
+          <Text style={styles.label}>Business Name</Text>
           <TextInput
             style={styles.input}
-            value={fullName}
-            onChangeText={setFullName}
-            placeholder="Enter your full name"
+            value={businessName}
+            onChangeText={setBusinessName}
+            placeholder="Enter your business name"
             placeholderTextColor="#6B7280"
           />
         </View>
 
         <View style={styles.formGroup}>
-          <Text style={styles.label}>Professional Title / Service</Text>
+          <Text style={styles.label}>Tagline (Short Bio)</Text>
           <TextInput
             style={styles.input}
-            value={service}
-            onChangeText={setService}
+            value={tagline}
+            onChangeText={setTagline}
             placeholder="e.g. Expert Plumber"
             placeholderTextColor="#6B7280"
           />
@@ -107,42 +229,55 @@ const Profile = () => {
             />
           </View>
           <View style={[styles.formGroup, { flex: 1 }]}>
-            <Text style={styles.label}>Phone Number</Text>
+            <Text style={styles.label}>Years of Exp.</Text>
             <TextInput
               style={styles.input}
-              value={phone}
-              onChangeText={setPhone}
-              placeholder="e.g. 08012345678"
+              value={yearsOfExperience}
+              onChangeText={setYearsOfExperience}
+              placeholder="e.g. 5"
               placeholderTextColor="#6B7280"
-              keyboardType="phone-pad"
+              keyboardType="numeric"
             />
           </View>
         </View>
 
         <View style={styles.formGroup}>
-          <Text style={styles.label}>Location</Text>
+          <Text style={styles.label}>Travel Radius (km)</Text>
           <TextInput
             style={styles.input}
-            value={location}
-            onChangeText={setLocation}
-            placeholder="e.g. Lekki, Lagos"
+            value={travelRadius}
+            onChangeText={setTravelRadius}
+            placeholder="e.g. 20"
             placeholderTextColor="#6B7280"
+            keyboardType="numeric"
           />
         </View>
 
         <View style={styles.formGroup}>
-          <Text style={styles.label}>Skills (Comma separated)</Text>
-          <TextInput
-            style={styles.input}
-            value={skills}
-            onChangeText={setSkills}
-            placeholder="e.g. Pipe Repair, Installation, Leakage"
-            placeholderTextColor="#6B7280"
-          />
+          <Text style={styles.label}>Services / Categories</Text>
+          <View style={styles.categoriesContainer}>
+            {availableCategories.map((cat) => (
+              <TouchableOpacity
+                key={cat.id}
+                style={[
+                  styles.categoryChip,
+                  selectedCategories.includes(cat.id) && styles.categoryChipSelected
+                ]}
+                onPress={() => toggleCategory(cat.id)}
+              >
+                <Text style={[
+                  styles.categoryText,
+                  selectedCategories.includes(cat.id) && styles.categoryTextSelected
+                ]}>
+                  {cat.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
 
         <View style={styles.formGroup}>
-          <Text style={styles.label}>About / Bio</Text>
+          <Text style={styles.label}>Detailed Bio</Text>
           <TextInput
             style={[styles.input, styles.textArea]}
             value={bio}
@@ -154,6 +289,11 @@ const Profile = () => {
             textAlignVertical="top"
           />
         </View>
+
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <MaterialCommunityIcons name="logout" size={24} color="#fff" />
+          <Text style={styles.logoutText}>Log Out</Text>
+        </TouchableOpacity>
 
         <View style={{ height: 40 }} />
       </ScrollView>
@@ -240,6 +380,47 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
     justifyContent: "space-between",
+  },
+  logoutButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#EF4444",
+    padding: 15,
+    borderRadius: 12,
+    marginTop: 20,
+    marginBottom: 20,
+  },
+  logoutText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+    marginLeft: 10,
+  },
+  categoriesContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+  },
+  categoryChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: "#1F2937",
+    borderWidth: 1,
+    borderColor: "#374151",
+  },
+  categoryChipSelected: {
+    backgroundColor: "rgba(59, 130, 246, 0.2)", // Blue tint
+    borderColor: "#3B82F6",
+  },
+  categoryText: {
+    fontSize: 14,
+    color: "#fff",
+  },
+  categoryTextSelected: {
+    color: "#3B82F6",
+    fontWeight: "600",
   },
 });
 
