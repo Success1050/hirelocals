@@ -97,40 +97,67 @@ export const authAPI = {
     const response = await apiClient.put('api/auth/switch-role', { newRole });
     return response.data;
   },
+  /**
+   * Update user profile (generic)
+   */
+  updateProfile: async (formData: FormData) => {
+    const response = await apiClient.put('api/users/profile', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
 };
 
 export const providerAPI = {
-    createProfile: async (data: any) => {
-        // Use FormData if sending files, otherwise JSON might work depending on backend
-        // But backend uses multer, so FormData is safest if files are involved.
-        // For now, if no files, we can try JSON, but usually mixed content requires FormData.
-        // Let's assume we might need to change this to FormData in the component if images are added.
-        const response = await apiClient.post('/api/providers', data);
+    createProfile: async (formData: FormData) => {
+        const response = await apiClient.post('api/providers', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
         return response.data;
     },
     getProfile: async () => {
-        const response = await apiClient.get('/api/providers/me');
+        const response = await apiClient.get('api/providers/me');
         return response.data;
     },
-    updateProfile: async (data: any) => {
-        const response = await apiClient.put('/api/providers', data);
+    updateProfile: async (formData: FormData) => {
+        const response = await apiClient.put('api/providers', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
         return response.data;
     },
     createService: async (data: any) => {
-        const response = await apiClient.post('/api/providers/services', data);
+        const response = await apiClient.post('api/providers/services', data);
+        return response.data;
+    },
+    getServices: async () => {
+        const response = await apiClient.get('api/providers/services');
+        return response.data;
+    },
+    updateService: async (id: string, data: any) => {
+        const response = await apiClient.put(`api/providers/services/${id}`, data);
+        return response.data;
+    },
+    deleteService: async (id: string) => {
+        const response = await apiClient.delete(`api/providers/services/${id}`);
         return response.data;
     },
     getCategories: async () => {
-        const response = await apiClient.get('/api/providers/categories');
+        const response = await apiClient.get('api/providers/categories');
         return response.data;
     },
     // Portfolio Management
     getPortfolio: async () => {
-        const response = await apiClient.get('/api/providers/portfolio');
+        const response = await apiClient.get('api/providers/portfolio');
         return response.data;
     },
     addPortfolioItem: async (formData: FormData) => {
-        const response = await apiClient.post('/api/providers/portfolio', formData, {
+        const response = await apiClient.post('api/providers/portfolio', formData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
             },
@@ -138,7 +165,47 @@ export const providerAPI = {
         return response.data;
     },
     deletePortfolioItem: async (id: string) => {
-        const response = await apiClient.delete(`/api/providers/portfolio/${id}`);
+        const response = await apiClient.delete(`api/providers/portfolio/${id}`);
+        return response.data;
+    },
+    // Service Portfolio (Images specific to a service)
+    addServiceImages: async (serviceId: string, formData: FormData) => {
+        const response = await apiClient.post(`api/providers/services/${serviceId}/images`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    },
+    getServiceImages: async (serviceId: string) => {
+        const response = await apiClient.get(`api/providers/services/${serviceId}/images`);
+        return response.data;
+    },
+    deleteServiceImage: async (serviceId: string, imageId: string) => {
+        const response = await apiClient.delete(`api/providers/services/${serviceId}/images/${imageId}`);
+        return response.data;
+    },
+};
+
+export const userAPI = {
+    getCategories: async () => {
+        const response = await apiClient.get('api/providers/categories');
+        return response.data;
+    },
+    getAllServices: async (params?: { categoryId?: string; search?: string }) => {
+        const response = await apiClient.get('api/providers/all-services', { params });
+        return response.data;
+    },
+    getServiceById: async (id: string) => {
+        const response = await apiClient.get(`api/providers/services/${id}`);
+        return response.data;
+    },
+    getAllProviders: async (params?: { categoryId?: string; search?: string }) => {
+        const response = await apiClient.get('api/providers/all-providers', { params });
+        return response.data;
+    },
+    getProviderById: async (id: string) => {
+        const response = await apiClient.get(`api/providers/${id}`);
         return response.data;
     },
 };

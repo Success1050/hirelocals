@@ -55,6 +55,20 @@ const TabsLayout = () => {
           ),
         }}
       />
+
+      <Tabs.Screen
+        name="CategoryServices"
+        options={{
+          href: null,
+        }}
+      />
+
+      <Tabs.Screen
+        name="ProviderProfile"
+        options={{
+          href: null,
+        }}
+      />
     </Tabs>
   );
 };

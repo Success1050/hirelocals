@@ -6,8 +6,9 @@ import {
   ScrollView,
   Switch,
   StatusBar,
+  RefreshControl,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import ScreenWrapper from "@/components/ScreenWrapper";
 import { useRouter } from "expo-router";
 import { theme } from "@/constants/theme";
@@ -16,9 +17,18 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const ProfessionalDashboard = () => {
   const router = useRouter();
-  const { user, logout: authLogout } = useAuth();
+  const { user, logout: authLogout, refreshUser } = useAuth();
   const [isOnline, setIsOnline] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refreshUser();
+    // Simulate fetching fresh stats/jobs since they are currently mock
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    setRefreshing(false);
+  }, [refreshUser]);
 
   // Mock Data
   const stats = [
@@ -75,6 +85,12 @@ const ProfessionalDashboard = () => {
       color: "#FBBF24",
     },
     {
+      title: "My Services",
+      icon: "briefcase",
+      route: "/(professionals)/Services",
+      color: "#8B5CF6",
+    },
+    {
       title: "Portfolio",
       icon: "camera-burst",
       route: "/(professionals)/Portfolio",
@@ -99,6 +115,9 @@ const ProfessionalDashboard = () => {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.container}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#fff" />
+        }
       >
         {/* Header Section */}
         <View style={styles.header}>

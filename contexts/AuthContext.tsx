@@ -74,7 +74,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             // We need to import providerAPI at the top of the file
             const { providerAPI } = require('@/lib/api');
             const response = await providerAPI.getProfile();
-            if (response && response.success && response.profile) {
+            if (response && response.success && (response.profile || response.provider)) {
+                console.log('Provider profile exists', response.success);
                 setIsProviderProfileComplete(true);
             } else {
                 setIsProviderProfileComplete(false);

@@ -23,17 +23,8 @@ function RootLayoutNav() {
       router.replace("/");
     } else if (isAuthenticated) {
       if (user?.role === "PROVIDER" || user?.role === "BOTH") {
-        if (!isProviderProfileComplete) {
-          // Redirect to onboarding if profile is not complete
-          if (pathname !== "/onboarding/ProviderOnboarding") {
-            router.replace("/onboarding/ProviderOnboarding");
-          }
-        } else {
-          // Profile is complete, redirect to dashboard if in auth/root/onboarding
-          if (inAuthGroup || isRoot || inOnboardingGroup) {
-            router.replace("/(professionals)/ProfessionalDashboard");
-          }
-        }
+        // Redirect to onboarding if profile is not complete
+        router.replace("/(professionals)/ProfessionalDashboard");
       } else {
         // Customer
         if (inAuthGroup || isRoot || inOnboardingGroup) {

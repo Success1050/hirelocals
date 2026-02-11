@@ -8,19 +8,29 @@ import {
   Alert,
   ActivityIndicator,
   Image,
+  RefreshControl,
 } from "react-native";
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import ScreenWrapper from "@/components/ScreenWrapper";
 import { useRouter } from "expo-router";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { theme } from "@/constants/theme";
 import { useAuth } from "@/contexts/AuthContext";
 
+import * as ImagePicker from "expo-image-picker";
+
 const Profile = () => {
   const router = useRouter();
-  const { logout, user } = useAuth();
+  const { logout, user, refreshUser } = useAuth();
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(async () => {
+    await refreshUser();
+    await loadProfile(true);
+  }, [refreshUser]);
 
   // Profile State
   const [businessName, setBusinessName] = useState("");
@@ -30,6 +40,7 @@ const Profile = () => {
   const [yearsOfExperience, setYearsOfExperience] = useState("");
   const [travelRadius, setTravelRadius] = useState("");
   const [address, setAddress] = useState("");
+  const [profileImage, setProfileImage] = useState<string | null>(null);
 
   // Categories/Skills
   const [categories, setCategories] = useState<any[]>([]);
@@ -39,7 +50,7 @@ const Profile = () => {
   useEffect(() => {
     loadProfile();
     loadCategories();
-  }, []);
+  }, [user]);
 
   const loadCategories = async () => {
     try {
@@ -53,20 +64,30 @@ const Profile = () => {
     }
   };
 
-  const loadProfile = async () => {
+  const loadProfile = async (isRefresh = false) => {
     try {
-      setFetching(true);
+      if (!isRefresh) setFetching(true);
+      else setRefreshing(true);
+
       const { providerAPI } = require('@/lib/api');
       const res = await providerAPI.getProfile();
 
-      if (res.success && res.profile) {
-        const p = res.profile;
+      if (res.success && res.provider) {
+        const p = res.provider;
         setBusinessName(p.businessName || "");
         setTagline(p.tagline || "");
         setBio(p.bio || "");
-        setHourlyRate(p.hourlyRate ? p.hourlyRate.toString() : "");
-        setYearsOfExperience(p.yearsOfExperience ? p.yearsOfExperience.toString() : "");
-        setTravelRadius(p.travelRadius ? p.travelRadius.toString() : "");
+        setHourlyRate(p.hourlyRate?.toString() || "");
+        setYearsOfExperience(p.yearsOfExperience?.toString() || "");
+        setTravelRadius(p.travelRadius?.toString() || "");
+        setAddress(p.address || "");
+        setProfileImage(
+          p.profileImage
+            ? p.profileImage.startsWith("http")
+              ? p.profileImage
+              : `https://sillconnect-backend.onrender.com/${p.profileImage}`
+            : null
+        );
 
         // Categories
         if (p.categories && Array.isArray(p.categories)) {
@@ -74,16 +95,65 @@ const Profile = () => {
           setSelectedCategories(p.categories.map((c: any) => c.id));
         }
 
-        // Address (from user object nested in profile or direct user context)
+        // User data
         if (p.user) {
           setAddress(p.user.address || "");
+          setProfileImage(p.user.profileImage ? (p.user.profileImage.startsWith('http') ? p.user.profileImage : `https://sillconnect-backend.onrender.com/${p.user.profileImage}`) : null);
         }
       }
     } catch (error) {
       console.error("Error loading profile:", error);
       Alert.alert("Error", "Failed to load profile data");
     } finally {
-      setFetching(false);
+      if (!isRefresh) setFetching(false);
+      else setRefreshing(false);
+    }
+  };
+
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+
+    if (!result.canceled) {
+      handleImageUpload(result.assets[0].uri);
+    }
+  };
+
+  const handleImageUpload = async (uri: string) => {
+    try {
+      setUploadingImage(true);
+      const { providerAPI } = require('@/lib/api');
+
+      const formData = new FormData();
+      const filename = uri.split('/').pop();
+      const match = /\.(\w+)$/.exec(filename || '');
+      const type = match ? `image/${match[1]}` : `image`;
+
+      formData.append('profileImage', {
+        uri,
+        name: filename,
+        type
+      } as any);
+
+      // We use the same updateProfile endpoint as it handles profileImage in the backend
+      const res = await providerAPI.updateProfile(formData);
+
+      if (res.success) {
+        setProfileImage(uri);
+        await refreshUser();
+        Alert.alert("Success", "Profile picture updated!");
+      } else {
+        Alert.alert("Error", res.message || "Failed to update profile picture");
+      }
+    } catch (error) {
+      console.error("Image upload error:", error);
+      Alert.alert("Error", "Failed to upload image");
+    } finally {
+      setUploadingImage(false);
     }
   };
 
@@ -97,21 +167,19 @@ const Profile = () => {
     try {
       const { providerAPI } = require('@/lib/api');
 
-      const updateData = {
-        businessName,
-        tagline,
-        bio,
-        hourlyRate: parseFloat(hourlyRate),
-        yearsOfExperience: parseInt(yearsOfExperience) || 0,
-        travelRadius: parseFloat(travelRadius) || 0,
-        categories: selectedCategories // Send array of IDs
-      };
+      const formData = new FormData();
+      formData.append('businessName', businessName);
+      formData.append('tagline', tagline);
+      formData.append('bio', bio);
+      formData.append('hourlyRate', hourlyRate);
+      formData.append('yearsOfExperience', yearsOfExperience || '0');
+      formData.append('travelRadius', travelRadius || '0');
+      formData.append('categories', JSON.stringify(selectedCategories));
 
-      const res = await providerAPI.updateProfile(updateData);
+      const res = await providerAPI.updateProfile(formData);
 
       if (res.success) {
         Alert.alert("Success", "Profile updated successfully!");
-        // Reload to reflect any server-side processing
         loadProfile();
       } else {
         Alert.alert("Error", res.message || "Failed to update profile");
@@ -180,18 +248,29 @@ const Profile = () => {
         </TouchableOpacity>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.container}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.container}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3B82F6" />
+        }
+      >
 
         {/* Avatar Placeholder */}
         <View style={styles.avatarSection}>
-          <View style={styles.avatarContainer}>
-            {user?.profileImage ? (
-              <Image source={{ uri: user.profileImage }} style={styles.avatar} />
+          <TouchableOpacity style={styles.avatarContainer} onPress={pickImage} disabled={uploadingImage}>
+            {uploadingImage ? (
+              <ActivityIndicator size="large" color="#3B82F6" />
+            ) : profileImage ? (
+              <Image source={{ uri: profileImage }} style={styles.avatar} />
             ) : (
               <Text style={styles.avatarPlaceholder}>{user?.firstName?.charAt(0) || "U"}</Text>
             )}
-          </View>
-          <Text style={styles.avatarHint}>Profile pictures can be managed in settings</Text>
+            <View style={styles.editIconContainer}>
+              <Ionicons name="camera" size={16} color="#fff" />
+            </View>
+          </TouchableOpacity>
+          <Text style={styles.avatarHint}>Tap to change profile picture</Text>
         </View>
 
         <View style={styles.formGroup}>
@@ -346,6 +425,19 @@ const styles = StyleSheet.create({
   avatar: {
     width: "100%",
     height: "100%",
+  },
+  editIconContainer: {
+    position: "absolute",
+    bottom: 0,
+    right: 0,
+    backgroundColor: "#3B82F6",
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#030712",
   },
   avatarPlaceholder: {
     fontSize: 32,

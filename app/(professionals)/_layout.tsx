@@ -72,6 +72,13 @@ const TabsLayout = () => {
           href: null,
         }}
       />
+
+      <Tabs.Screen
+        name="Services"
+        options={{
+          href: null,
+        }}
+      />
     </Tabs>
   );
 };

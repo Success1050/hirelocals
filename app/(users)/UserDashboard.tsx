@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,16 +7,113 @@ import {
   TextInput,
   StyleSheet,
   StatusBar,
+  ActivityIndicator,
+  Image,
+  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { featuredPros, recentBookings, services } from "@/mockData";
+import { useRouter } from "expo-router";
+import { featuredPros, recentBookings, services as mockServices } from "@/mockData";
 import { styles } from "@/styles/userStyles/style";
 import { useAuth } from "@/contexts/AuthContext";
+import { userAPI } from "@/lib/api";
+
+const customStyles = StyleSheet.create({
+  horizontalServiceCard: {
+    backgroundColor: '#111827',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#1F2937',
+  },
+  serviceImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 12,
+    marginRight: 12,
+  },
+  serviceMainInfo: {
+    flex: 1,
+  },
+  serviceTitleText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 4,
+  },
+  providerText: {
+    fontSize: 14,
+    color: '#9CA3AF',
+    marginBottom: 8,
+  },
+  priceText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#FBBF24',
+  },
+  bookBtn: {
+    backgroundColor: '#2563EB',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  bookBtnText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+});
 
 export default function UserDashboard() {
+  const router = useRouter();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("home");
+  const [categories, setCategories] = useState<any[]>([]);
+  const [allServices, setAllServices] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async (isRefresh = false) => {
+    try {
+      if (!isRefresh) setLoading(true);
+      else setRefreshing(true);
+
+      const [catRes, serRes] = await Promise.all([
+        userAPI.getCategories(),
+        userAPI.getAllServices(),
+      ]);
+
+      if (catRes.success) {
+        setCategories(catRes.categories);
+      }
+      if (serRes.success) {
+        setAllServices(serRes.services);
+      }
+    } catch (error) {
+      console.error("Fetch dashboard data error:", error);
+    } finally {
+      if (!isRefresh) setLoading(false);
+      else setRefreshing(false);
+    }
+  };
+
+  const onRefresh = React.useCallback(() => {
+    fetchData(true);
+  }, []);
+
+  // Helper to count services per category
+  const getServiceCount = (categoryId: string) => {
+    return allServices.filter(s => s.categoryId === categoryId).length;
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -30,6 +127,15 @@ export default function UserDashboard() {
         return { bg: "#1F2937", text: "#9CA3AF" };
     }
   };
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#2563EB" />
+        <Text style={{ color: '#fff', marginTop: 10 }}>Loading your personalized view...</Text>
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -78,7 +184,13 @@ export default function UserDashboard() {
         </View>
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#fff" />
+        }
+      >
         {/* Welcome Section */}
         <View style={styles.welcomeSection}>
           <Text style={styles.welcomeTitle}>
@@ -89,73 +201,94 @@ export default function UserDashboard() {
           </Text>
         </View>
 
-        {/* Quick Stats */}
-        <View style={styles.statsContainer}>
-          <View style={[styles.statCard, { backgroundColor: "#2563EB" }]}>
-            <View style={styles.statHeader}>
-              <Ionicons name="time-outline" size={20} color="#BFDBFE" />
-              <Text style={styles.statLabel}>Active</Text>
-            </View>
-            <Text style={styles.statValue}>2</Text>
-            <Text style={styles.statSubtext}>Bookings</Text>
-          </View>
-
-          <View style={[styles.statCard, { backgroundColor: "#9333EA" }]}>
-            <View style={styles.statHeader}>
-              <Ionicons name="star" size={20} color="#E9D5FF" />
-              <Text style={styles.statLabel}>Completed</Text>
-            </View>
-            <Text style={styles.statValue}>12</Text>
-            <Text style={styles.statSubtext}>Jobs</Text>
-          </View>
-
-          <View style={[styles.statCard, { backgroundColor: "#059669" }]}>
-            <View style={styles.statHeader}>
-              <Ionicons name="trending-up" size={20} color="#A7F3D0" />
-              <Text style={styles.statLabel}>Saved</Text>
-            </View>
-            <Text style={styles.statValue}>₦24k</Text>
-            <Text style={styles.statSubtext}>This month</Text>
-          </View>
-        </View>
-
-        {/* Services Section */}
+        {/* Categories Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Browse Services</Text>
-            <TouchableOpacity>
-              <Text style={styles.viewAllText}>View All</Text>
-            </TouchableOpacity>
+            <Text style={styles.sectionTitle}>Browse Categories</Text>
           </View>
 
           <View style={styles.servicesGrid}>
-            {services.map((service) => (
-              <TouchableOpacity key={service.id} style={styles.serviceCard}>
+            {categories.map((cat, index) => (
+              <TouchableOpacity
+                key={cat.id}
+                style={styles.serviceCard}
+                onPress={() => router.push({
+                  pathname: '/(users)/CategoryServices',
+                  params: { id: cat.id, name: cat.name }
+                })}
+              >
                 <View
                   style={[
                     styles.serviceIcon,
-                    { backgroundColor: service.color },
+                    { backgroundColor: ["#2563EB", "#9333EA", "#059669", "#D97706", "#DC2626", "#4F46E5"][index % 6] },
                   ]}
                 >
-                  <Ionicons name={service.icon} size={24} color="#fff" />
+                  <Ionicons name="apps" size={24} color="#fff" />
                 </View>
-                <Text style={styles.serviceName}>{service.name}</Text>
-                <Text style={styles.serviceJobs}>{service.jobs} available</Text>
+                <Text style={styles.serviceName}>{cat.name}</Text>
+                <Text style={styles.serviceJobs}>{getServiceCount(cat.id)} services</Text>
               </TouchableOpacity>
             ))}
           </View>
         </View>
 
-        {/* Featured Professionals */}
+        {/* Featured Services/Bookings */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Featured Professionals</Text>
+            <Text style={styles.sectionTitle}>Available Services</Text>
             <TouchableOpacity>
               <Text style={styles.viewAllText}>View All</Text>
             </TouchableOpacity>
           </View>
 
-          {featuredPros.map((pro) => (
+          {allServices.length === 0 ? (
+            <View style={{ padding: 20, alignItems: 'center' }}>
+              <Text style={{ color: '#9CA3AF' }}>No services available right now.</Text>
+            </View>
+          ) : (
+            allServices.map((service) => (
+              <TouchableOpacity
+                key={service.id}
+                style={customStyles.horizontalServiceCard}
+                onPress={() => router.push({ pathname: '/Details', params: { id: service.id } })}
+              >
+                {service.images?.[0] && (
+                  <Image
+                    source={{ uri: service.images[0].mediaUrl.startsWith('http') ? service.images[0].mediaUrl : `https://sillconnect-backend.onrender.com/${service.images[0].mediaUrl}` }}
+                    style={customStyles.serviceImage}
+                  />
+                )}
+                <View style={customStyles.serviceMainInfo}>
+                  <Text style={customStyles.serviceTitleText}>{service.title}</Text>
+                  <Text style={customStyles.providerText}>
+                    by {service.provider?.providerProfile?.businessName || `${service.provider?.firstName} ${service.provider?.lastName}`}
+                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                    <Ionicons name="star" size={12} color="#FBBF24" />
+                    <Text style={{ color: '#FBBF24', fontSize: 12, marginLeft: 4 }}>
+                      {service.provider?.providerProfile?.averageRating || '5.0'}
+                    </Text>
+                  </View>
+                  <Text style={customStyles.priceText}>₦{service.price}</Text>
+                </View>
+                <View style={customStyles.bookBtn}>
+                  <Text style={customStyles.bookBtnText}>Book Now</Text>
+                </View>
+              </TouchableOpacity>
+            ))
+          )}
+        </View>
+
+        {/* Featured Professionals */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Featured Professionals (Demo)</Text>
+            <TouchableOpacity>
+              <Text style={styles.viewAllText}>View All</Text>
+            </TouchableOpacity>
+          </View>
+
+          {featuredPros.map((pro: any) => (
             <View key={pro.id} style={styles.proCard}>
               <Text style={styles.proEmoji}>{pro.emoji}</Text>
               <View style={styles.proInfo}>
@@ -181,13 +314,13 @@ export default function UserDashboard() {
         {/* Recent Bookings */}
         <View style={[styles.section, { marginBottom: 100 }]}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Recent Bookings</Text>
+            <Text style={styles.sectionTitle}>Your Recent Activity (Demo)</Text>
             <TouchableOpacity>
               <Text style={styles.viewAllText}>View All</Text>
             </TouchableOpacity>
           </View>
 
-          {recentBookings.map((booking) => {
+          {recentBookings.map((booking: any) => {
             const statusColor = getStatusColor(booking.status);
             return (
               <View key={booking.id} style={styles.bookingCard}>
@@ -231,3 +364,4 @@ export default function UserDashboard() {
     </SafeAreaView>
   );
 }
+
