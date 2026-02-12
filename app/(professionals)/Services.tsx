@@ -51,16 +51,24 @@ const Services = () => {
             if (!isRefresh) setLoading(true);
             else setRefreshing(true);
 
-            const [servicesRes, categoriesRes] = await Promise.all([
-                providerAPI.getServices(),
-                providerAPI.getCategories()
-            ]);
-
-            if (servicesRes.success) {
-                setServices(servicesRes.services);
+            // Fetch services
+            try {
+                const servicesRes = await providerAPI.getServices();
+                if (servicesRes.success) {
+                    setServices(servicesRes.services);
+                }
+            } catch (error) {
+                console.error("Fetch services error:", error);
             }
-            if (categoriesRes.success) {
-                setCategories(categoriesRes.categories);
+
+            // Fetch categories
+            try {
+                const categoriesRes = await providerAPI.getCategories();
+                if (categoriesRes.success) {
+                    setCategories(categoriesRes.categories);
+                }
+            } catch (error) {
+                console.error("Fetch categories error:", error);
             }
         } catch (error) {
             console.error("Fetch data error:", error);

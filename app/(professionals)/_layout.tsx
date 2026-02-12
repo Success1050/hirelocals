@@ -79,6 +79,7 @@ const TabsLayout = () => {
           href: null,
         }}
       />
+
     </Tabs>
   );
 };

@@ -71,9 +71,11 @@ const Profile = () => {
 
       const { providerAPI } = require('@/lib/api');
       const res = await providerAPI.getProfile();
+      console.log(res);
 
-      if (res.success && res.provider) {
-        const p = res.provider;
+
+      if (res.success && (res.profile || res.provider)) {
+        const p = res.profile || res.provider;
         setBusinessName(p.businessName || "");
         setTagline(p.tagline || "");
         setBio(p.bio || "");

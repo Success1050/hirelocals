@@ -12,6 +12,8 @@ function RootLayoutNav() {
   useEffect(() => {
     if (isLoading) return;
 
+    console.log('[LAYOUT DEBUG] isAuthenticated:', isAuthenticated, '| user role:', user?.role, '| isProviderProfileComplete:', isProviderProfileComplete, '| pathname:', pathname);
+
     const inAuthGroup = pathname.startsWith("/auth");
     const inProfessionalsGroup = pathname.startsWith("/(professionals)");
     const inUsersGroup = pathname.startsWith("/(users)");
@@ -23,8 +25,17 @@ function RootLayoutNav() {
       router.replace("/");
     } else if (isAuthenticated) {
       if (user?.role === "PROVIDER" || user?.role === "BOTH") {
-        // Redirect to onboarding if profile is not complete
-        router.replace("/(professionals)/ProfessionalDashboard");
+        if (isProviderProfileComplete) {
+          // Provider profile is complete, go to dashboard (only if not already there)
+          if (inAuthGroup || isRoot || inOnboardingGroup) {
+            router.replace("/(professionals)/ProfessionalDashboard");
+          }
+        } else {
+          // Provider profile not complete, go to onboarding (only if not already there)
+          if (inAuthGroup || isRoot || inProfessionalsGroup) {
+            router.replace("/onboarding/ProviderOnboarding");
+          }
+        }
       } else {
         // Customer
         if (inAuthGroup || isRoot || inOnboardingGroup) {

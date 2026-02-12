@@ -23,6 +23,7 @@ export default function ServiceDetailScreen() {
   const { id } = useLocalSearchParams();
   const [service, setService] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [showImageModal, setShowImageModal] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -33,15 +34,22 @@ export default function ServiceDetailScreen() {
     }
   }, [id]);
 
-  const fetchServiceDetails = async () => {
+  const fetchServiceDetails = async (retryCount = 0) => {
     try {
       setLoading(true);
+      setError(false);
       const res = await userAPI.getServiceById(id as string);
       if (res.success) {
         setService(res.service);
       }
-    } catch (error) {
-      console.error("Fetch service details error:", error);
+    } catch (err: any) {
+      console.error("Fetch service details error:", err);
+      // Retry once after 2s if it's a network error (backend cold start)
+      if (!err?.response && retryCount < 2) {
+        await new Promise(r => setTimeout(r, 2000));
+        return fetchServiceDetails(retryCount + 1);
+      }
+      setError(true);
     } finally {
       setLoading(false);
     }
@@ -51,17 +59,34 @@ export default function ServiceDetailScreen() {
     return (
       <View style={{ flex: 1, backgroundColor: "#030712", justifyContent: "center", alignItems: "center" }}>
         <ActivityIndicator size="large" color="#3B82F6" />
+        <Text style={{ color: "#9CA3AF", marginTop: 10 }}>Loading service details...</Text>
       </View>
     );
   }
 
-  if (!service) {
+  if (error || !service) {
     return (
-      <View style={{ flex: 1, backgroundColor: "#030712", justifyContent: "center", alignItems: "center" }}>
-        <Text style={{ color: "#fff" }}>Service not found</Text>
-        <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 20 }}>
-          <Text style={{ color: "#3B82F6" }}>Go Back</Text>
-        </TouchableOpacity>
+      <View style={{ flex: 1, backgroundColor: "#030712", justifyContent: "center", alignItems: "center", padding: 20 }}>
+        <Ionicons name="cloud-offline-outline" size={60} color="#374151" />
+        <Text style={{ color: "#fff", fontSize: 18, fontWeight: "bold", marginTop: 15 }}>
+          {error ? "Couldn't load service" : "Service not found"}
+        </Text>
+        <Text style={{ color: "#9CA3AF", textAlign: "center", marginTop: 8 }}>
+          {error ? "The server might be waking up. Try again in a moment." : "This service may no longer be available."}
+        </Text>
+        <View style={{ flexDirection: "row", gap: 15, marginTop: 20 }}>
+          {error && (
+            <TouchableOpacity
+              onPress={() => fetchServiceDetails()}
+              style={{ backgroundColor: "#3B82F6", paddingHorizontal: 20, paddingVertical: 12, borderRadius: 10 }}
+            >
+              <Text style={{ color: "#fff", fontWeight: "bold" }}>Retry</Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity onPress={() => router.back()} style={{ paddingHorizontal: 20, paddingVertical: 12 }}>
+            <Text style={{ color: "#3B82F6", fontWeight: "bold" }}>Go Back</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }
